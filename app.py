@@ -15,11 +15,17 @@ from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.boxlayout import MDBoxLayout
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.widget import Widget
 from kivymd.uix.textfield import MDTextField
 from kivy.uix.image import AsyncImage
 from kivy.clock import Clock
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
+import re
+import base64
+from PIL import Image
+import io
 
 with open('configopenai.json', 'r') as f:
     config = json.load(f)
@@ -69,29 +75,50 @@ def mixed_state_to_color_code(mixed_state):
 class QuantumImageApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.theme_cls.theme_style = "Dark"
+        self.theme_cls.primary_palette = "BlueGray"
         self.root = MDScreen()
         self.image_display = AsyncImage(source="")
         self.create_gui()
 
     def create_gui(self):
-        layout = MDBoxLayout(orientation="vertical")
-        self.text_box = MDTextField(hint_text="Enter your mood")
-        self.checkout_time_picker = MDTextField(hint_text="Enter checkout time (YYYY-MM-DD HH:MM)")
-        run_button = MDRaisedButton(text="Generate Visual", on_press=self.generate_visual)
+        layout = MDBoxLayout(orientation="vertical", md_bg_color=[0, 0, 0, 1]) 
+
+        self.text_box = MDTextField(hint_text="Enter your mood", hint_text_color=[1, 1, 1, 1])
+        self.checkout_time_picker = MDTextField(hint_text="Enter checkout time (YYYY-MM-DD HH:MM)", hint_text_color=[1, 1, 1, 1])
+        run_button = MDRaisedButton(text="Generate Visual", on_press=self.generate_visual, text_color=[1, 1, 1, 1])
+
+        
+        self.image_display = AsyncImage(source="", allow_stretch=True, keep_ratio=False)
+        self.image_display.size_hint_y = None
+        self.image_display.height = 0  
+
         layout.add_widget(self.text_box)
         layout.add_widget(self.checkout_time_picker)
         layout.add_widget(run_button)
-        layout.add_widget(self.image_display)
+        layout.add_widget(self.image_display) 
         self.root.add_widget(layout)
+
+    def update_image(self, image_path):
+        if image_path:
+            self.image_display.source = image_path
+            self.image_display.size_hint_y = 1 
+            self.image_display.height = self.root.height
+        else:
+            self.image_display.source = ""
+            self.image_display.size_hint_y = None
+            self.image_display.height = 0 
+
 
     def generate_visual(self, instance):
         mood_text = self.text_box.text
         checkout_time_str = self.checkout_time_picker.text
         executor = ThreadPoolExecutor(max_workers=1)
         future = executor.submit(
-            asyncio.run, self.process_mood_and_time(mood_text, checkout_time_str, mood_text)  # Pass mood_text as user_mood
+            asyncio.run, self.process_mood_and_time(mood_text, checkout_time_str, mood_text)
         )
         future.add_done_callback(self.on_visual_generated)
+
 
 
     def update_image(self, image_path):
@@ -106,7 +133,7 @@ class QuantumImageApp(MDApp):
             quantum_state = quantum_circuit(color_code, datetime_factor)
             image_path = generate_image_from_quantum_data(quantum_state)
             if image_path:
-                # Schedule the update to be run in the main thread
+                
                 Clock.schedule_once(lambda dt: self.update_image(image_path))
         except Exception as e:
             logging.error(f"Error in visual generation: {e}")
@@ -140,7 +167,7 @@ class QuantumImageApp(MDApp):
             checkout_time = datetime.strptime(checkout_time_str, "%Y-%m-%d %H:%M")
             now = datetime.now()
             time_diff = (checkout_time - now).total_seconds()
-            return max(0, 1 - time_diff / (24 * 3600))  # Normalize to a factor between 0 and 1
+            return max(0, 1 - time_diff / (24 * 3600)) 
         except Exception as e:
             logging.error(f"Error in calculating datetime factor: {e}")
             return 1
@@ -163,7 +190,6 @@ class QuantumImageApp(MDApp):
             "Now, based on the mood '{user_mood}', provide a similar mapping."
         )
         async with httpx.AsyncClient() as client:
-       
             try:
                 response = await client.post(
                     "https://api.openai.com/v1/chat/completions",
@@ -179,6 +205,7 @@ class QuantumImageApp(MDApp):
             except Exception as e:
                 logging.error(f"Error in generating emotion-color mapping: {e}")
                 return {}
+
 
     def parse_emotion_color_mapping(self, gpt4_response):
         try:
@@ -208,10 +235,6 @@ class QuantumImageApp(MDApp):
             logging.error(f"Error in interpreting sentiment: {e}")
             return "neutral"
 
-import re
-import base64
-from PIL import Image
-import io
 
 def generate_image_from_quantum_data(quantum_state):
     try:
