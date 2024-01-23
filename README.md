@@ -1,6 +1,11 @@
 # Q Visual Check Out Timers by gray00 and chatgpt/llama2
+Demo 1 
+![image](https://github.com/graylan0/quantum-visual-checkout-timer/assets/34530588/cd95d8b8-c5d5-4da6-a6c9-21201ba184ff)
 
+Demo 2
 ![image](https://github.com/graylan0/quantum-visual-checkout-timer/assets/34530588/82f31227-126a-4036-aafd-39cfec92eb85)
+
+
 
 In the spirit of Carl Sagan's awe-inspiring and contemplative approach to the cosmos, let's explore the Quantum Image App, a symphony of technology and human emotion, where each feature interacts harmoniously like constellations in the night sky.
 
