@@ -26,6 +26,7 @@ with open('configopenai.json', 'r') as f:
     config = json.load(f)
 
 openai_api_key = config['openai_api_key']
+stable_url = config['stable_url']
 logging.basicConfig(level=logging.INFO)
 num_qubits = 6
 dev = qml.device('default.qubit', wires=num_qubits)
@@ -94,16 +95,6 @@ class QuantumImageApp(MDApp):
         self.layout.add_widget(self.image_display)
         self.root.add_widget(self.layout)
 
-    def update_image(self, image_path):
-        if image_path and os.path.exists(image_path):
-            self.image_display.source = image_path
-            self.image_display.size_hint_y = 1
-            self.image_display.height = 200
-        else:
-            self.image_display.source = ""
-            self.image_display.size_hint_y = None
-            self.image_display.height = 0
-
 
 
     def generate_visual(self, instance):
@@ -147,6 +138,12 @@ class QuantumImageApp(MDApp):
     async def process_mood_and_time(self, mood_text, checkout_time_str, user_mood):
         try:
             emotion_color_map = await self.generate_emotion_color_mapping(user_mood)
+        
+            # Check if emotion_color_map is None
+            if emotion_color_map is None:
+                logging.error("emotion_color_map is None")
+                return "#808080", 1
+
             datetime_factor = self.calculate_datetime_factor(checkout_time_str)
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -156,14 +153,19 @@ class QuantumImageApp(MDApp):
                         "model": "gpt-4",
                         "messages": [
                             {"role": "system", "content": "Determine the sentiment of the following text."},
-                            {"role": "user", "content": mood_text}
+                            {"role": "user", "content": "Determine the sentiment of the following text by designing a colorized sentiment factor {mood_text}"}
                         ]
                     }
                 )
                 response.raise_for_status()
                 result = response.json()
 
-                if result is not None and 'choices' in result and len(result['choices']) > 0:
+                # Check if result is None
+                if result is None:
+                    logging.error("Invalid response structure from GPT-4")
+                    return "#808080", 1
+
+                if 'choices' in result and len(result['choices']) > 0:
                     sentiment = self.interpret_gpt4_sentiment(result)
                     return emotion_color_map.get(sentiment, "#808080"), datetime_factor
                 else:
@@ -257,16 +259,16 @@ def generate_image_from_quantum_data(quantum_state):
     try:
         color_code = mixed_state_to_color_code(quantum_state)
         prompt = f"Generate an image with predominant color {color_code}"
-        url = 'http://127.0.0.1:7860/sdapi/v1/txt2img'
+        url = stable_url
         payload = {
             "prompt": prompt,
-            "steps": 121,
+            "steps": 12,
             "seed": random.randrange(sys.maxsize),
             "enable_hr": "false",
             "denoising_strength": "0.7",
             "cfg_scale": "7",
-            "width": 966,
-            "height": 1356,
+            "width": 666,
+            "height": 456,
             "restore_faces": "true",
         }
         response = requests.post(url, json=payload)
