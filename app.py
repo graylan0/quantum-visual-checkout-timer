@@ -82,32 +82,33 @@ class QuantumImageApp(MDApp):
         self.create_gui()
 
     def create_gui(self):
-        layout = MDBoxLayout(orientation="vertical", md_bg_color=[0, 0, 0, 1]) 
+        self.layout = MDBoxLayout(orientation="vertical", md_bg_color=[0, 0, 0, 1])  # Dark background for the layout
 
         self.text_box = MDTextField(hint_text="Enter your mood", hint_text_color=[1, 1, 1, 1])
         self.checkout_time_picker = MDTextField(hint_text="Enter checkout time (YYYY-MM-DD HH:MM)", hint_text_color=[1, 1, 1, 1])
         run_button = MDRaisedButton(text="Generate Visual", on_press=self.generate_visual, text_color=[1, 1, 1, 1])
 
-        
-        self.image_display = AsyncImage(source="", allow_stretch=True, keep_ratio=False)
+        # AsyncImage initially with no source
+        self.image_display = AsyncImage(source="", allow_stretch=True, keep_ratio=True)
         self.image_display.size_hint_y = None
-        self.image_display.height = 0  
+        self.image_display.height = 0  # Initially set height to 0
 
-        layout.add_widget(self.text_box)
-        layout.add_widget(self.checkout_time_picker)
-        layout.add_widget(run_button)
-        layout.add_widget(self.image_display) 
-        self.root.add_widget(layout)
+        self.layout.add_widget(self.text_box)
+        self.layout.add_widget(self.checkout_time_picker)
+        self.layout.add_widget(run_button)
+        self.layout.add_widget(self.image_display)
+        self.root.add_widget(self.layout)
 
     def update_image(self, image_path):
-        if image_path:
+        if image_path and os.path.exists(image_path):
             self.image_display.source = image_path
-            self.image_display.size_hint_y = 1 
-            self.image_display.height = self.root.height
+            self.image_display.size_hint_y = 1
+            self.image_display.height = 200  # Or any suitable height
         else:
             self.image_display.source = ""
             self.image_display.size_hint_y = None
-            self.image_display.height = 0 
+            self.image_display.height = 0
+
 
 
     def generate_visual(self, instance):
@@ -122,10 +123,18 @@ class QuantumImageApp(MDApp):
 
 
     def update_image(self, image_path):
-        self.image_display.source = ""
-        self.image_display.reload()
-        self.image_display.source = image_path
-        self.image_display.reload()
+        if image_path and os.path.exists(image_path):
+            logging.info(f"Updating image display with {image_path}")
+            self.image_display.source = image_path
+            self.image_display.size_hint_y = 1
+            self.image_display.height = 200  # Or any suitable height
+        else:
+            logging.error(f"Image file not found at {image_path}")
+            self.image_display.source = ""
+            self.image_display.size_hint_y = None
+            self.image_display.height = 0
+
+
 
     def on_visual_generated(self, future):
         try:
@@ -133,8 +142,10 @@ class QuantumImageApp(MDApp):
             quantum_state = quantum_circuit(color_code, datetime_factor)
             image_path = generate_image_from_quantum_data(quantum_state)
             if image_path:
-                
+                logging.info(f"Image path received: {image_path}")
                 Clock.schedule_once(lambda dt: self.update_image(image_path))
+            else:
+                logging.error("Image path not received")
         except Exception as e:
             logging.error(f"Error in visual generation: {e}")
 
@@ -257,12 +268,12 @@ def generate_image_from_quantum_data(quantum_state):
         r = response.json()
 
         if 'images' in r and r['images']:
-
             base64_data = r['images'][0]
             image_bytes = base64.b64decode(base64_data)
-            image = Image.open(io.BytesIO(image_bytes))
             image_path = f"output_{random.randint(0, 10000)}.png"
-            image.save(image_path)
+            with open(image_path, "wb") as image_file:
+                image_file.write(image_bytes)
+            logging.info(f"Image saved to {image_path}")
             return image_path
         else:
             logging.error("No images found in the response")
