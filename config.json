@@ -1,3 +1,4 @@
 {
     "openai_api_key": "key"
+    "stable_url" : "http://url/sdapi/v1/txt2img"
 }
