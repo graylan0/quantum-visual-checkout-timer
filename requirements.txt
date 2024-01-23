@@ -1,0 +1,7 @@
+pennylane
+numpy
+requests
+Pillow
+httpx
+kivy
+kivymd
