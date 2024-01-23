@@ -1,15 +1,5 @@
 # Quantum Visual Check Out Timers by gray00 and chatgpt/llama2
-Demo 1 
-![image](https://github.com/graylan0/quantum-visual-checkout-timer/assets/34530588/cd95d8b8-c5d5-4da6-a6c9-21201ba184ff)
-
-Demo 2
-![image](https://github.com/graylan0/quantum-visual-checkout-timer/assets/34530588/82f31227-126a-4036-aafd-39cfec92eb85)
-
-Demo 3
-![image](https://github.com/graylan0/quantum-visual-checkout-timer/assets/34530588/1cc93d8d-1f17-42b7-8edf-8ec53ee154c3)
-
-Demo 4
-![image](https://github.com/graylan0/quantum-visual-checkout-timer/assets/34530588/5034d15e-ca33-41b2-9a5d-89104b4c16dd)
+![image](https://github.com/graylan0/quantum-visual-checkout-timer/assets/34530588/5ee269f7-c99b-4079-8fc0-a23f58c0b126)
 
 
 
