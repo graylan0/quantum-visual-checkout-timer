@@ -17,12 +17,9 @@ from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.textfield import MDTextField
 from kivy.uix.image import AsyncImage
+from kivy.clock import Clock
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
-import re
-import base64
-from PIL import Image
-import io
 
 with open('configopenai.json', 'r') as f:
     config = json.load(f)
@@ -92,9 +89,16 @@ class QuantumImageApp(MDApp):
         checkout_time_str = self.checkout_time_picker.text
         executor = ThreadPoolExecutor(max_workers=1)
         future = executor.submit(
-            asyncio.run, self.process_mood_and_time(mood_text, checkout_time_str)
+            asyncio.run, self.process_mood_and_time(mood_text, checkout_time_str, mood_text)  # Pass mood_text as user_mood
         )
         future.add_done_callback(self.on_visual_generated)
+
+
+    def update_image(self, image_path):
+        self.image_display.source = ""
+        self.image_display.reload()
+        self.image_display.source = image_path
+        self.image_display.reload()
 
     def on_visual_generated(self, future):
         try:
@@ -102,13 +106,14 @@ class QuantumImageApp(MDApp):
             quantum_state = quantum_circuit(color_code, datetime_factor)
             image_path = generate_image_from_quantum_data(quantum_state)
             if image_path:
-                self.image_display.source = image_path
+                # Schedule the update to be run in the main thread
+                Clock.schedule_once(lambda dt: self.update_image(image_path))
         except Exception as e:
             logging.error(f"Error in visual generation: {e}")
 
-    async def process_mood_and_time(self, mood_text, checkout_time_str):
+    async def process_mood_and_time(self, mood_text, checkout_time_str, user_mood):
         try:
-            emotion_color_map = await self.generate_emotion_color_mapping()
+            emotion_color_map = await self.generate_emotion_color_mapping(user_mood)
             datetime_factor = self.calculate_datetime_factor(checkout_time_str)
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -140,9 +145,25 @@ class QuantumImageApp(MDApp):
             logging.error(f"Error in calculating datetime factor: {e}")
             return 1
 
-    async def generate_emotion_color_mapping(self):
-        prompt = "Create a mapping of emotions to colors based on color psychology. Include emotions like happy, sad, excited, angry, calm, and neutral."
+    async def generate_emotion_color_mapping(self, user_mood):
+        prompt = (
+            f"The user's current mood is '{user_mood}'. Based on this, "
+            "create a detailed mapping of emotions to specific colors, "
+            "considering how colors can influence mood and perception. "
+            "The mapping should be in a clear, list format. "
+            "For example:\n"
+            "[example]\n"
+            "happy: #FFFF00 (bright yellow),\n"
+            "sad: #0000FF (blue),\n"
+            "excited: #FF4500 (orange red),\n"
+            "angry: #FF0000 (red),\n"
+            "calm: #00FFFF (cyan),\n"
+            "neutral: #808080 (gray)\n"
+            "[/example]\n"
+            "Now, based on the mood '{user_mood}', provide a similar mapping."
+        )
         async with httpx.AsyncClient() as client:
+       
             try:
                 response = await client.post(
                     "https://api.openai.com/v1/chat/completions",
@@ -162,10 +183,13 @@ class QuantumImageApp(MDApp):
     def parse_emotion_color_mapping(self, gpt4_response):
         try:
             response_text = gpt4_response['choices'][0]['message']['content']
+
+            mapping_text = response_text.split("[example]")[1].split("[/example]")[0].strip()
             emotion_color_map = {}
-            for line in response_text.split(','):
-                emotion, color = line.strip().split(':')
-                emotion_color_map[emotion.strip().lower()] = color.strip()
+            for line in mapping_text.split(',\n'):
+                if line.strip():
+                    emotion, color = line.split(':')
+                    emotion_color_map[emotion.strip().lower()] = color.strip().split(' ')[0]
             return emotion_color_map
         except Exception as e:
             logging.error(f"Error in parsing emotion-color mapping: {e}")
@@ -184,6 +208,10 @@ class QuantumImageApp(MDApp):
             logging.error(f"Error in interpreting sentiment: {e}")
             return "neutral"
 
+import re
+import base64
+from PIL import Image
+import io
 
 def generate_image_from_quantum_data(quantum_state):
     try:
