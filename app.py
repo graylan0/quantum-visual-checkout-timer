@@ -24,7 +24,7 @@ from kivy.uix.image import AsyncImage
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
 
-with open('configopenai.json', 'r') as f:
+with open('config.json', 'r') as f:
     config = json.load(f)
 
 openai_api_key = config['openai_api_key']
