@@ -19,6 +19,10 @@ from kivymd.uix.textfield import MDTextField
 from kivy.uix.image import AsyncImage
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
+import re
+import base64
+from PIL import Image
+import io
 
 with open('configopenai.json', 'r') as f:
     config = json.load(f)
@@ -180,10 +184,6 @@ class QuantumImageApp(MDApp):
             logging.error(f"Error in interpreting sentiment: {e}")
             return "neutral"
 
-import re
-import base64
-from PIL import Image
-import io
 
 def generate_image_from_quantum_data(quantum_state):
     try:
