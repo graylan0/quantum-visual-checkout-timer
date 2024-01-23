@@ -5,6 +5,9 @@ Demo 1
 Demo 2
 ![image](https://github.com/graylan0/quantum-visual-checkout-timer/assets/34530588/82f31227-126a-4036-aafd-39cfec92eb85)
 
+Demo 3
+![image](https://github.com/graylan0/quantum-visual-checkout-timer/assets/34530588/1cc93d8d-1f17-42b7-8edf-8ec53ee154c3)
+
 
 
 In the spirit of Carl Sagan's awe-inspiring and contemplative approach to the cosmos, let's explore the Quantum Image App, a symphony of technology and human emotion, where each feature interacts harmoniously like constellations in the night sky.
