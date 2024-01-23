@@ -3,10 +3,6 @@ import numpy as np
 import requests
 import random
 import sys
-import re
-import base64
-from PIL import Image
-import io
 import io
 import base64
 from PIL import Image
@@ -24,7 +20,7 @@ from kivy.uix.image import AsyncImage
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
 
-with open('config.json', 'r') as f:
+with open('configopenai.json', 'r') as f:
     config = json.load(f)
 
 openai_api_key = config['openai_api_key']
@@ -46,11 +42,28 @@ def quantum_circuit(color_code, datetime_factor):
     return qml.state()
 
 def mixed_state_to_color_code(mixed_state):
-    norm_probs = mixed_state / np.sum(mixed_state)
-    r = int(sum(norm_probs[:2]) * 255)
-    g = int(sum(norm_probs[2:4]) * 255)
-    b = int(sum(norm_probs[4:]) * 255)
+
+    mixed_state = np.array(mixed_state)
+
+
+    probabilities = np.abs(mixed_state)**2
+
+
+    probabilities /= np.sum(probabilities)
+
+
+    r_prob = probabilities[:len(probabilities)//3]
+    g_prob = probabilities[len(probabilities)//3:2*len(probabilities)//3]
+    b_prob = probabilities[2*len(probabilities)//3:]
+
+
+    r = int(np.sum(r_prob) * 255)
+    g = int(np.sum(g_prob) * 255)
+    b = int(np.sum(b_prob) * 255)
+
+
     return f'#{r:02x}{g:02x}{b:02x}'
+
 
 class QuantumImageApp(MDApp):
     def __init__(self, **kwargs):
@@ -167,6 +180,10 @@ class QuantumImageApp(MDApp):
             logging.error(f"Error in interpreting sentiment: {e}")
             return "neutral"
 
+import re
+import base64
+from PIL import Image
+import io
 
 def generate_image_from_quantum_data(quantum_state):
     try:
@@ -180,8 +197,8 @@ def generate_image_from_quantum_data(quantum_state):
             "enable_hr": "false",
             "denoising_strength": "0.7",
             "cfg_scale": "7",
-            "width": 366,
-            "height": 856,
+            "width": 966,
+            "height": 1356,
             "restore_faces": "true",
         }
         response = requests.post(url, json=payload)
@@ -189,7 +206,7 @@ def generate_image_from_quantum_data(quantum_state):
         r = response.json()
 
         if 'images' in r and r['images']:
-            # Directly decode the base64 image data
+
             base64_data = r['images'][0]
             image_bytes = base64.b64decode(base64_data)
             image = Image.open(io.BytesIO(image_bytes))
