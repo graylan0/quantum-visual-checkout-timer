@@ -3,9 +3,7 @@ import numpy as np
 import requests
 import random
 import sys
-import io
 import base64
-from PIL import Image
 import httpx
 import logging
 import os
@@ -22,10 +20,7 @@ from kivy.uix.image import AsyncImage
 from kivy.clock import Clock
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
-import re
 import base64
-from PIL import Image
-import io
 
 with open('configopenai.json', 'r') as f:
     config = json.load(f)
@@ -82,16 +77,16 @@ class QuantumImageApp(MDApp):
         self.create_gui()
 
     def create_gui(self):
-        self.layout = MDBoxLayout(orientation="vertical", md_bg_color=[0, 0, 0, 1])  # Dark background for the layout
+        self.layout = MDBoxLayout(orientation="vertical", md_bg_color=[0, 0, 0, 1])
 
         self.text_box = MDTextField(hint_text="Enter your mood", hint_text_color=[1, 1, 1, 1])
         self.checkout_time_picker = MDTextField(hint_text="Enter checkout time (YYYY-MM-DD HH:MM)", hint_text_color=[1, 1, 1, 1])
         run_button = MDRaisedButton(text="Generate Visual", on_press=self.generate_visual, text_color=[1, 1, 1, 1])
 
-        # AsyncImage initially with no source
+        
         self.image_display = AsyncImage(source="", allow_stretch=True, keep_ratio=True)
         self.image_display.size_hint_y = None
-        self.image_display.height = 0  # Initially set height to 0
+        self.image_display.height = 0
 
         self.layout.add_widget(self.text_box)
         self.layout.add_widget(self.checkout_time_picker)
@@ -103,7 +98,7 @@ class QuantumImageApp(MDApp):
         if image_path and os.path.exists(image_path):
             self.image_display.source = image_path
             self.image_display.size_hint_y = 1
-            self.image_display.height = 200  # Or any suitable height
+            self.image_display.height = 200
         else:
             self.image_display.source = ""
             self.image_display.size_hint_y = None
@@ -127,7 +122,7 @@ class QuantumImageApp(MDApp):
             logging.info(f"Updating image display with {image_path}")
             self.image_display.source = image_path
             self.image_display.size_hint_y = 1
-            self.image_display.height = 200  # Or any suitable height
+            self.image_display.height = 200
         else:
             logging.error(f"Image file not found at {image_path}")
             self.image_display.source = ""
@@ -167,8 +162,13 @@ class QuantumImageApp(MDApp):
                 )
                 response.raise_for_status()
                 result = response.json()
-                sentiment = self.interpret_gpt4_sentiment(result)
-                return emotion_color_map.get(sentiment, "#808080"), datetime_factor
+
+                if result is not None and 'choices' in result and len(result['choices']) > 0:
+                    sentiment = self.interpret_gpt4_sentiment(result)
+                    return emotion_color_map.get(sentiment, "#808080"), datetime_factor
+                else:
+                    logging.error("Invalid response structure from GPT-4")
+                    return "#808080", 1
         except Exception as e:
             logging.error(f"Error in mood and time processing: {e}")
             return "#808080", 1
@@ -182,7 +182,7 @@ class QuantumImageApp(MDApp):
         except Exception as e:
             logging.error(f"Error in calculating datetime factor: {e}")
             return 1
-
+        
     async def generate_emotion_color_mapping(self, user_mood):
         prompt = (
             f"The user's current mood is '{user_mood}'. Based on this, "
@@ -200,8 +200,8 @@ class QuantumImageApp(MDApp):
             "[/example]\n"
             "Now, based on the mood '{user_mood}', provide a similar mapping."
         )
-        async with httpx.AsyncClient() as client:
-            try:
+        try:
+            async with httpx.AsyncClient() as client:
                 response = await client.post(
                     "https://api.openai.com/v1/chat/completions",
                     headers={"Authorization": f"Bearer {openai_api_key}"},
@@ -212,10 +212,16 @@ class QuantumImageApp(MDApp):
                 )
                 response.raise_for_status()
                 result = response.json()
+                logging.debug(f"GPT-4 response for emotion-color mapping: {result}")
                 return self.parse_emotion_color_mapping(result)
-            except Exception as e:
-                logging.error(f"Error in generating emotion-color mapping: {e}")
-                return {}
+        except httpx.HTTPStatusError as e:
+            logging.error(f"HTTP error occurred: {e.response.status_code}")
+        except httpx.RequestError as e:
+            logging.error(f"An error occurred while requesting: {e}")
+        except Exception as e:
+            logging.error(f"Error in generating emotion-color mapping: {e}")
+            return {}
+
 
 
     def parse_emotion_color_mapping(self, gpt4_response):
