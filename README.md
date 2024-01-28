@@ -1,4 +1,4 @@
-# Quantum Visual Check Out Timers by gray00 and chatgpt/llama2/bard
+# Quantum Visual Check Out Timers by gray00 and chatgpt/llama2/bard/others
 ![image](https://github.com/graylan0/quantum-visual-checkout-timer/assets/34530588/084f3b03-f2eb-4829-b843-ec5b2c6fa4d6)
 
 ![image](https://github.com/graylan0/quantum-visual-checkout-timer/assets/34530588/5ee269f7-c99b-4079-8fc0-a23f58c0b126)
