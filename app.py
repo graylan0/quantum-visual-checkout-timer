@@ -212,7 +212,7 @@ class QuantumImageApp(MDApp):
                         "messages": [{"role": "system", "content": prompt}]
                     }
                 )
-                response.raise_for_status()  # This will raise an exception for HTTP error responses
+                response.raise_for_status()
                 result = response.json()
                 logging.debug(f"GPT-4 response for emotion-color mapping: {result}")
                 return self.parse_emotion_color_mapping(result)
@@ -230,15 +230,15 @@ class QuantumImageApp(MDApp):
 
     def parse_emotion_color_mapping(self, gpt4_response):
         try:
-            # Ensure the response has the expected structure
+
             if 'choices' in gpt4_response and len(gpt4_response['choices']) > 0:
                 response_text = gpt4_response['choices'][0]['message']['content']
 
-                # Split and parse the response text
+
                 emotion_color_map = {}
                 for line in response_text.split('\n'):
-                    if ':' in line:  # Check if the line contains a colon
-                        emotion, color = line.split(':', 1)  # Split only on the first colon
+                    if ':' in line:
+                        emotion, color = line.split(':', 1)
                         emotion = emotion.strip().lower()
                         color_code = color.strip().split(' ')[0]
                         emotion_color_map[emotion] = color_code
