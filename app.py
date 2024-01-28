@@ -139,7 +139,7 @@ class QuantumImageApp(MDApp):
         try:
             emotion_color_map = await self.generate_emotion_color_mapping(user_mood)
         
-            # Check if emotion_color_map is None
+
             if emotion_color_map is None:
                 logging.error("emotion_color_map is None")
                 return "#808080", 1
@@ -152,15 +152,15 @@ class QuantumImageApp(MDApp):
                     json={
                         "model": "gpt-4",
                         "messages": [
-                            {"role": "system", "content": "Determine the sentiment of the following text."},
-                            {"role": "user", "content": "Determine the sentiment of the following text by designing a colorized sentiment factor {mood_text}"}
+                            {"role": "system", "content": "Determine the sentiment of the following text. Provide HTML color Coodes"},
+                            {"role": "user", "content": "Determine the sentiment of the following text by designing a colorized sentiment factor Provide Html Color CODES for each reply's  following inspective test [inspective text] {mood_text}[/inspectiveteext]"}
                         ]
                     }
                 )
                 response.raise_for_status()
                 result = response.json()
 
-                # Check if result is None
+
                 if result is None:
                     logging.error("Invalid response structure from GPT-4")
                     return "#808080", 1
@@ -212,34 +212,44 @@ class QuantumImageApp(MDApp):
                         "messages": [{"role": "system", "content": prompt}]
                     }
                 )
-                response.raise_for_status()
+                response.raise_for_status()  # This will raise an exception for HTTP error responses
                 result = response.json()
                 logging.debug(f"GPT-4 response for emotion-color mapping: {result}")
                 return self.parse_emotion_color_mapping(result)
         except httpx.HTTPStatusError as e:
             logging.error(f"HTTP error occurred: {e.response.status_code}")
+            return None
         except httpx.RequestError as e:
             logging.error(f"An error occurred while requesting: {e}")
+            return None
         except Exception as e:
             logging.error(f"Error in generating emotion-color mapping: {e}")
-            return {}
+            return None
 
 
 
     def parse_emotion_color_mapping(self, gpt4_response):
         try:
-            response_text = gpt4_response['choices'][0]['message']['content']
+            # Ensure the response has the expected structure
+            if 'choices' in gpt4_response and len(gpt4_response['choices']) > 0:
+                response_text = gpt4_response['choices'][0]['message']['content']
 
-            mapping_text = response_text.split("[example]")[1].split("[/example]")[0].strip()
-            emotion_color_map = {}
-            for line in mapping_text.split(',\n'):
-                if line.strip():
-                    emotion, color = line.split(':')
-                    emotion_color_map[emotion.strip().lower()] = color.strip().split(' ')[0]
-            return emotion_color_map
+                # Split and parse the response text
+                emotion_color_map = {}
+                for line in response_text.split('\n'):
+                    if ':' in line:  # Check if the line contains a colon
+                        emotion, color = line.split(':', 1)  # Split only on the first colon
+                        emotion = emotion.strip().lower()
+                        color_code = color.strip().split(' ')[0]
+                        emotion_color_map[emotion] = color_code
+                return emotion_color_map
+            else:
+                logging.error("Invalid response structure from GPT-4")
+                return {}
         except Exception as e:
             logging.error(f"Error in parsing emotion-color mapping: {e}")
             return {}
+
 
     def interpret_gpt4_sentiment(self, gpt4_response):
         try:
@@ -262,7 +272,7 @@ def generate_image_from_quantum_data(quantum_state):
         url = stable_url
         payload = {
             "prompt": prompt,
-            "steps": 12,
+            "steps": 121,
             "seed": random.randrange(sys.maxsize),
             "enable_hr": "false",
             "denoising_strength": "0.7",
